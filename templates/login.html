@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Doktor Paneli Giriş</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f0f3f7; margin: 0; padding: 0; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .login-card { background: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 8px 24px rgba(0,0,0,0.08); width: 360px; }
+        h2 { margin-top: 0; color: #20304c; }
+        input { width: 100%; padding: 12px 14px; margin: 10px 0; border: 1px solid #d3d9e6; border-radius: 6px; font-size: 1em; }
+        button { width: 100%; padding: 12px 14px; margin-top: 14px; background: #2c6bff; color: white; border: none; border-radius: 6px; font-size: 1em; cursor: pointer; }
+        .error { color: #b33030; margin-bottom: 12px; }
+        .small { color: #667; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Doktor Paneli Giriş</h2>
+        {% if error %}
+            <div class="error">{{ error }}</div>
+        {% endif %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="Kullanıcı Adı" required autofocus>
+            <input type="password" name="password" placeholder="Şifre" required>
+            <button type="submit">Giriş Yap</button>
+        </form>
+        <p class="small">Varsayılan: doctor / 1234</p>
+    </div>
+</body>
+</html>

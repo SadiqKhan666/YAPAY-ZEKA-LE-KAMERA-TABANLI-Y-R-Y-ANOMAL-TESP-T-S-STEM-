@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Doktor Paneli</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f7f7f7; }
+        h1 { color: #224; }
+        .card { background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); margin-bottom: 20px; padding: 20px; }
+        .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+        .patient { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #fff; }
+        .patient h3 { margin: 0 0 6px; }
+        .patient p { margin: 4px 0; }
+        .small { color: #666; font-size: 0.95em; }
+        .link-btn { display: inline-block; margin-top: 8px; padding: 8px 12px; border-radius: 6px; background: #2c6bff; color: white; text-decoration: none; font-size: 0.95em; }
+        .link-btn:hover { opacity: 0.92; }
+        .status-normal { color: green; }
+        .status-bad { color: #b33; }
+    </style>
+    <script src="doctor_panel.js"></script>
+</head>
+<body>
+    <h1>Doktor Paneli</h1>
+    <div class="card" style="display:flex; justify-content:space-between; align-items:center;">
+        <div>
+            <h2>Dashboard</h2>
+            <div id="dashboard"></div>
+        </div>
+        <div>
+            <a href="/review" class="link-btn" style="margin-right: 10px;">Onay Bekleyenler</a>
+            <a href="/logout" style="color:#2c6bff; text-decoration:none; font-weight:600;">Çıkış Yap</a>
+        </div>
+    </div>
+    <div class="card">
+        <h2>Hasta Listesi</h2>
+        <div id="patients"></div>
+    </div>
+</body>
+</html>

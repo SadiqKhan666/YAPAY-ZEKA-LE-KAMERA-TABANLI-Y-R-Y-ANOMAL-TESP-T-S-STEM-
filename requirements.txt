@@ -1,0 +1,6 @@
+Flask
+werkzeug
+reportlab
+numpy
+opencv-python
+mediapipe

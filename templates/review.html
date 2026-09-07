@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doktor Onay Paneli</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; background: #f7f7f7; }
+        table { border-collapse: collapse; width: 100%; background: #fff; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background: #00437a; color: white; }
+        tr:nth-child(even) { background: #f2f2f2; }
+        .label-select { width: 100%; padding: 4px; }
+        .button { padding: 8px 12px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .button:hover { background: #0056b3; }
+        .status-chip { display: inline-block; padding: 4px 8px; border-radius: 12px; color: white; font-size: 0.9em; }
+        .ai-pred { background: #28a745; }
+        .pending { background: #ffc107; color: #212529; }
+        .mismatch { background: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>Doktor Onay Paneli</h1>
+    <p>AI tahminleri doğru mu? Lütfen her kaydı kontrol edin ve doktor etiketini seçin.</p>
+
+    {% if data %}
+    <table>
+        <tr>
+            <th>Hasta</th>
+            <th>Tarih</th>
+            <th>AI Tahmini</th>
+            <th>Model Confidence</th>
+            <th>Durum</th>
+            <th>Disease</th>
+            <th>Doctor Label</th>
+            <th>Onayla</th>
+        </tr>
+        {% for d in data %}
+        <tr>
+            <td>{{ d['name'] }}</td>
+            <td>{{ d['date'] }}</td>
+            <td>
+                <span class="status-chip ai-pred">{{ d['ai_prediction'] or 'Bilinmiyor' }}</span>
+            </td>
+            <td>{{ '{:.2f}'.format(d['confidence']) if d['confidence'] is not none else '-' }}</td>
+            <td>{{ d['status'] }}</td>
+            <td>{{ d['disease'] }}</td>
+            <td>{{ d['doctor_label'] or 'Beklemede' }}</td>
+            <td>
+                <form class="approve-form" method="POST" action="/approve">
+                    <input type="hidden" name="id" value="{{ d['id'] }}">
+                    <select class="label-select" name="label">
+                        <option value="NORMAL">Normal</option>
+                        <option value="ABNORMAL">Anormal</option>
+                        <option value="PARKINSONS">Topallama</option>
+                        <option value="IMBALANCE">Dengesizlik</option>
+                    </select>
+                    <button class="button" type="submit">Onayla</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% else %}
+    <p>Onay bekleyen analiz kaydı yok.</p>
+    {% endif %}
+    <script>
+    document.addEventListener('DOMContentLoaded', function(){
+        function removeRow(form){
+            const row = form.closest('tr');
+            if(row) row.remove();
+            // If no more data rows, show the 'no pending' message
+            const table = document.querySelector('table');
+            if(table){
+                const dataRows = table.querySelectorAll('tr');
+                if(dataRows.length <= 1){
+                    table.remove();
+                    const p = document.createElement('p');
+                    p.textContent = 'Onay bekleyen analiz kaydı yok.';
+                    document.body.appendChild(p);
+                }
+            }
+        }
+
+        document.querySelectorAll('form.approve-form').forEach(function(form){
+            form.addEventListener('submit', async function(e){
+                e.preventDefault();
+                const formData = new FormData(form);
+                try{
+                    const resp = await fetch(form.action, {
+                        method: 'POST',
+                        headers: {'X-Requested-With': 'XMLHttpRequest'},
+                        body: formData
+                    });
+                    if(!resp.ok) throw new Error('Sunucu hatası');
+                    const j = await resp.json();
+                    if(j && j.status === 'ok'){
+                        removeRow(form);
+                    } else {
+                        alert('Onay kaydedilemedi.');
+                    }
+                }catch(err){
+                    alert('Onay gönderilemedi: ' + err.message);
+                }
+            });
+        });
+    });
+    </script>
+</body>
+</html>

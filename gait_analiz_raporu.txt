@@ -1,0 +1,40 @@
+============================================================
+YÜRÜYÜŞ ANALİZİ RAPORU
+============================================================
+
+📊 TEMEL BİLGİLER:
+  • Analiz Süresi: 62.31 saniye
+  • Analiz Tarihi: 07/09/2026 14:02:20
+
+👣 ADIM SAYIMı:
+  • Toplam Adım Sayısı: 6 / 18
+  • Sol Ayak Adımları: 6
+  • Sağ Ayak Adımları: 3
+  • Adım Dengesi: 50.0%
+  • Sağ-Sol Adım Farkı: 3 (Hafif fark)
+
+⏱️ TOPLAM SURE: 0.00 s
+📐 TOPLAM MESAFE: 2.55 m
+🚶 YURUYUS HIZI: 0.00 m/s (YAVAS (RISKLI))
+🞯 ORTALAMA ADIM SURESI: 0.60 s
+🎯 GAIT SKORU: 0/100 (Bekleniyor)
+
+📈 ASİMETRİ ANALİZİ:
+  • Ortalama Asimetri: 0.74%
+  • Minimum Asimetri: 0.00%
+  • Maksimum Asimetri: 19.80%
+  • Asimetri Değişkenliği: 19.80%
+  • Eşik Durumu: Altında
+
+🎯 SONUÇ:
+  • Tanı: RİSKLİ
+  • Açıklama: ⚠ Hafif asimetri tespit edilmiştir. Takip önerilir.
+  • Gelişmiş Analiz (Hybrid): NORMAL (Güven: 0.00)
+  • Gelişmiş Gerekçe: Analiz bekleniyor
+
+📋 DEĞERLENDİRME:
+  • İlk 18 adımdaki gerçek zamanlı veriler analiz edilmiştir.
+  • Adım simetrisi ve diz eklem açıları sürekli izlenmiştir.
+  • Yürüyüş paterninin normalize edilip edilmediği belirlenmiştir.
+
+============================================================

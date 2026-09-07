@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Telefonla Yürüyüş Analizi</title>
+    <style>
+        body { margin:0; font-family: Arial, sans-serif; background: #eef2fb; color:#1b1f29; }
+        .app { max-width: 720px; margin: auto; padding: 16px; }
+        h1 { margin: 0 0 12px; font-size: 1.8rem; }
+        .card { background: white; border-radius: 18px; box-shadow: 0 18px 40px rgba(30, 70, 140, 0.08); padding: 16px; margin-bottom: 16px; }
+        .video-card { position: relative; overflow: hidden; border-radius: 18px; background: #000; }
+        video { width: 100%; height: auto; display: block; }
+        button { border: none; border-radius: 12px; padding: 14px 18px; font-size: 1rem; cursor: pointer; margin: 8px 4px 0 0; }
+        .primary { background: #3056ff; color:#fff; }
+        .danger { background: #ff4c4c; color:#fff; }
+        .secondary { background: #4b5563; color:#fff; }
+        .result-row { display: grid; grid-template-columns: repeat(2, minmax(120px, 1fr)); gap: 12px; }
+        .result-box { padding: 14px; border-radius: 14px; background: #f3f6ff; }
+        .result-box strong { display: block; margin-bottom: 6px; color:#374151; }
+        .status-text { margin: 12px 0 0; font-size: 0.95rem; color:#1f2937; }
+        .note { font-size: 0.9rem; color:#4b5563; margin-top: 8px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="card">
+            <h1>Telefonla Yürüyüş Analizi</h1>
+            <p class="note">Bu sayfa telefon tarayıcınızdan kamera görüntüsünü alır ve PC üzerindeki analiz sunucusuna gönderir.</p>
+        </div>
+
+        <div class="card video-card">
+            <video id="video" autoplay playsinline muted></video>
+            <canvas id="captureCanvas" style="display:none;"></canvas>
+        </div>
+
+        <div class="card">
+            <button id="startButton" class="primary">Analizi Başlat</button>
+            <button id="stopButton" class="danger" disabled>Durdur</button>
+            <button id="resetButton" class="secondary">Sıfırla</button>
+            <div class="status-text" id="statusText">Hazır. Başlatmak için butona dokunun.</div>
+        </div>
+
+        <div class="card">
+            <div class="result-row">
+                <div class="result-box">
+                    <strong>Durum</strong>
+                    <div id="analysisStatus">-</div>
+                </div>
+                <div class="result-box">
+                    <strong>Asimetri</strong>
+                    <div id="asymmetryValue">-</div>
+                </div>
+                <div class="result-box">
+                    <strong>Sağ Adım</strong>
+                    <div id="rightSteps">0</div>
+                </div>
+                <div class="result-box">
+                    <strong>Sol Adım</strong>
+                    <div id="leftSteps">0</div>
+                </div>
+                <div class="result-box">
+                    <strong>Sağ Açı</strong>
+                    <div id="rightAngle">-</div>
+                </div>
+                <div class="result-box">
+                    <strong>Sol Açı</strong>
+                    <div id="leftAngle">-</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <p class="note">Sunucuyu PC'nizde çalıştırıp bu sayfaya telefonunuzdan erişin: <strong>http://[PC_IP]:5000/mobile</strong></p>
+            <p class="note">PC ve telefon aynı Wi-Fi ağında olmalıdır.</p>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('captureCanvas');
+        const statusText = document.getElementById('statusText');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const resetButton = document.getElementById('resetButton');
+        const analysisStatus = document.getElementById('analysisStatus');
+        const asymmetryValue = document.getElementById('asymmetryValue');
+        const rightSteps = document.getElementById('rightSteps');
+        const leftSteps = document.getElementById('leftSteps');
+        const rightAngle = document.getElementById('rightAngle');
+        const leftAngle = document.getElementById('leftAngle');
+
+        let stream = null;
+        let captureInterval = null;
+
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+                video.srcObject = stream;
+                await video.play();
+            } catch (err) {
+                statusText.textContent = 'Kamera açılamadı: ' + err.message;
+            }
+        }
+
+        async function sendFrame() {
+            if (!video.videoWidth) {
+                return;
+            }
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            return new Promise((resolve, reject) => {
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        reject(new Error('Görüntü blob oluşturulamadı.'));
+                        return;
+                    }
+                    const form = new FormData();
+                    form.append('frame', blob, 'frame.jpg');
+                    try {
+                        const response = await fetch('/analyze', { method: 'POST', body: form });
+                        if (!response.ok) throw new Error('Sunucu hatası');
+                        const data = await response.json();
+                        resolve(data);
+                    } catch (err) {
+                        reject(err);
+                    }
+                }, 'image/jpeg', 0.8);
+            });
+        }
+
+        async function captureLoop() {
+            try {
+                const result = await sendFrame();
+                analysisStatus.textContent = result.status || '-';
+                asymmetryValue.textContent = result.asymmetry ? result.asymmetry.toFixed(1) + '%' : '-';
+                rightSteps.textContent = result.right;
+                leftSteps.textContent = result.left;
+                rightAngle.textContent = result.right_angle ? result.right_angle.toFixed(1) + '°' : '-';
+                leftAngle.textContent = result.left_angle ? result.left_angle.toFixed(1) + '°' : '-';
+                statusText.textContent = 'Analiz çalışıyor... En son gönderilen kare aldı.';
+            } catch (err) {
+                statusText.textContent = 'Analizde hata: ' + err.message;
+            }
+        }
+
+        function startAnalysis() {
+            if (captureInterval) return;
+            statusText.textContent = 'Analiz başlatılıyor...';
+            startButton.disabled = true;
+            stopButton.disabled = false;
+            startCamera().then(() => {
+                captureInterval = setInterval(captureLoop, 1000);
+                captureLoop();
+            });
+        }
+
+        function stopAnalysis() {
+            if (captureInterval) {
+                clearInterval(captureInterval);
+                captureInterval = null;
+            }
+            statusText.textContent = 'Analiz durduruldu.';
+            startButton.disabled = false;
+            stopButton.disabled = true;
+        }
+
+        async function resetAnalysis() {
+            try {
+                const response = await fetch('/reset', { method: 'POST' });
+                if (!response.ok) throw new Error('Sunucu yanıtı hatalı');
+                statusText.textContent = 'Analiz sıfırlandı.';
+                analysisStatus.textContent = '-';
+                asymmetryValue.textContent = '-';
+                rightSteps.textContent = '0';
+                leftSteps.textContent = '0';
+                rightAngle.textContent = '-';
+                leftAngle.textContent = '-';
+            } catch (err) {
+                statusText.textContent = 'Sıfırlama hatası: ' + err.message;
+            }
+        }
+
+        startButton.addEventListener('click', startAnalysis);
+        stopButton.addEventListener('click', stopAnalysis);
+        resetButton.addEventListener('click', resetAnalysis);
+    </script>
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ patient.name }} - Canlı Analiz</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f6fb; color: #1f2937; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 3px 18px rgba(0,0,0,0.08); padding: 20px; margin-bottom: 20px; }
+        .row { display: flex; flex-wrap: wrap; gap: 20px; }
+        .half { flex: 1 1 320px; }
+        button { cursor: pointer; border: none; border-radius: 8px; padding: 12px 20px; font-size: 1rem; margin-right: 10px; }
+        .start { background: #2c6bff; color: white; }
+        .stop { background: #d32f2f; color: white; }
+        .status { margin-top: 10px; font-size: 0.95rem; }
+        .field { margin: 8px 0; }
+        .small { color: #57606a; }
+        a { color: #2c6bff; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>{{ patient.name }} için Canlı Analiz</h1>
+        <p class="small">Hasta Id: {{ patient.id }} · Yaş: {{ patient.age }} · Cinsiyet: {{ patient.gender }}</p>
+        <p>
+            <a href="/report/{{ patient.id }}" style="margin-right:12px;" class="btn">📄 PDF Rapor İndir</a>
+            <a href="/panel">← Doktor Paneline Dön</a>
+        </p>
+    </div>
+
+    <div class="row">
+        <div class="half card">
+            <h2>Canlı Video</h2>
+            <img id="videoStream" src="/video" width="100%" alt="Canlı Video Akışı">
+            <div style="margin-top: 14px;">
+                <button class="start" onclick="startAnalysis()">▶️ Başlat</button>
+                <button class="stop" onclick="stopAnalysis()">⏹ Durdur</button>
+            </div>
+            <div class="status" id="analysisState">Durum yükleniyor...</div>
+        </div>
+        <div class="half card">
+            <h2>Canlı Analiz Bilgileri</h2>
+            <div class="field"><strong>Analiz Durumu:</strong> <span id="runningText">Bekleniyor</span></div>
+            <div class="field"><strong>Yürüyüş Durumu:</strong> <span id="gaitText">-</span></div>
+            <div class="field"><strong>Sağ Adım:</strong> <span id="rightSteps">0</span></div>
+            <div class="field"><strong>Sol Adım:</strong> <span id="leftSteps">0</span></div>
+            <div class="field"><strong>Toplam Adım:</strong> <span id="totalSteps">0</span></div>
+            <div class="field"><strong>Son Güncelleme:</strong> <span id="updatedAt">-</span></div>
+        </div>
+    </div>
+
+    <script>
+        const patientId = {{ patient.id }};
+
+        async function fetchJson(url, options = {}) {
+            const res = await fetch(url, options);
+            if (!res.ok) throw new Error('API error');
+            return res.json();
+        }
+
+        async function startAnalysis() {
+            try {
+                await fetchJson('/start_analysis', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({patient_id: patientId})
+                });
+                document.getElementById('analysisState').textContent = 'Analiz başlatıldı. Kamera açılıyor...';
+            } catch (err) {
+                document.getElementById('analysisState').textContent = 'Başlatılamadı: ' + err.message;
+            }
+        }
+
+        async function stopAnalysis() {
+            try {
+                await fetchJson('/stop_analysis', {method: 'POST'});
+                document.getElementById('analysisState').textContent = 'Analiz durduruldu.';
+            } catch (err) {
+                document.getElementById('analysisState').textContent = 'Durdurulamadı: ' + err.message;
+            }
+        }
+
+        async function refreshState() {
+            try {
+                const data = await fetchJson('/analysis_state');
+                document.getElementById('runningText').textContent = data.analysis_running ? 'Çalışıyor' : 'Durdu';
+                document.getElementById('gaitText').textContent = data.status || '-';
+                document.getElementById('rightSteps').textContent = data.right_steps;
+                document.getElementById('leftSteps').textContent = data.left_steps;
+                document.getElementById('totalSteps').textContent = data.total_steps;
+                document.getElementById('updatedAt').textContent = new Date().toLocaleTimeString();
+                if (data.analysis_running) {
+                    document.getElementById('analysisState').textContent = 'Analiz aktif.';
+                }
+            } catch (err) {
+                document.getElementById('analysisState').textContent = 'Durum alınamadı.';
+            }
+        }
+
+        setInterval(refreshState, 1000);
+        refreshState();
+    </script>
+</body>
+</html>
