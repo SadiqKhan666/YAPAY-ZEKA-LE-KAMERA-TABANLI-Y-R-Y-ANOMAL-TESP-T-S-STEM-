@@ -2247,7 +2247,23 @@ def start_analysis(callback, done_callback=None, display=True):
         min_tracking_confidence=0.5
     )
 
-    cap = cv2.VideoCapture(0)
+    if os.name == "nt":
+        cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
+    else:
+        cap = cv2.VideoCapture(0)
+
+    if not cap.isOpened():
+        analysis_running = False
+        error_message = (
+            "Kamera açılamadı. Kameranın bağlı olduğunu, başka bir uygulama "
+            "tarafından kullanılmadığını ve kamera izninin açık olduğunu kontrol edin."
+        )
+        print(error_message)
+        if done_callback:
+            done_callback()
+        callback(error_message)
+        return
+
     prev_time = 0
     prev_left = 0
     prev_right = 0
@@ -2713,9 +2729,11 @@ def main():
     label.pack(pady=20)
     
     def update_ui(msg):
-        label.config(text="Analiz Tamamlandı! OK")
-        # Raporu mesaj kutusuyla göster
-        messagebox.showinfo("YÜRÜYÜŞ ANALİZİ SONUÇLARI", msg)
+        def show_result():
+            label.config(text="Analiz Tamamlandı! OK")
+            messagebox.showinfo("YÜRÜYÜŞ ANALİZİ SONUÇLARI", msg)
+
+        root.after(0, show_result)
 
     def on_start():
         label.config(text="Analiz başlatıldı... Lütfen yürüyün.")
